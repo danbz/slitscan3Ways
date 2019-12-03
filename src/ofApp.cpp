@@ -12,6 +12,14 @@ void ofApp::setup(){
     scanName = "horizontal";
     b_radial = false;
     b_drawCam = true;
+    seconds = minutes = hours = 0;
+    numOfSecs = 10;
+    numOfMins = 5;
+    numOfHours = 5;
+    
+    font.load("AkzidGroBol", 100);
+    // font.load("LiberationMono-Regular.ttf", 50);
+    
     // ask the video grabber for a list of attached camera devices.
     // put it into a vector of devices
     vector<ofVideoDevice> devices = vidGrabber.listDevices();
@@ -47,12 +55,10 @@ void ofApp::update(){
     
     switch (scanStyle) {
         case 1: // scan horizontal
-            
             for (int y=0; y<camHeight; y++ ) { // loop through all the pixels on a line
                 ofColor color = pixels.getColor( xSteps, y); // get the pixels on line ySteps
                 videoInverted.setColor(xSteps, y, color);
             }
-            
             videoTexture.loadData(videoInverted);
             
             if ( xSteps >= camWidth ) {
@@ -62,12 +68,10 @@ void ofApp::update(){
             break;
             
         case 2: // scan vertical
-            
             for (int x=0; x<camWidth; x++ ) { // loop through all the pixels on a line
                 ofColor color = pixels.getColor(x, ySteps); // get the pixels on line ySteps
                 videoInverted.setColor(x, ySteps, color);
             }
-            
             videoTexture.loadData(videoInverted);
             
             if ( ySteps >= camHeight ) {
@@ -84,7 +88,6 @@ void ofApp::update(){
             
             for (int x = camWidth; x>=0; x-= 1){
                 for (int y=0; y<camHeight; y++ ) { // loop through all the pixels on a line
-                    
                     videoInverted.setColor(x, y, videoInverted.getColor( x-1, y )); // copy each pixel in the target to 1 pixel the right
                 }
             }
@@ -99,23 +102,83 @@ void ofApp::update(){
             
             for (int y = camHeight; y>=0; y-= 1){
                 for (int x=0; x<camWidth; x++ ) { // loop through all the pixels on a column
-                    
                     videoInverted.setColor(x, y, videoInverted.getColor( x, y-1 )); // copy each pixel in the target to 1 pixel below
                 }
             }
             videoTexture.loadData(videoInverted);
             break;
+        case 5: // slitscan clock
+            if (ofGetSystemTimeMillis() > currTime + 1000){ // one second has elapsed
+                if (seconds >= numOfSecs){
+                    // grab a minute chunk from the camera
+                    // pixels.drawSubsection(0, xSteps, xSteps + numOfSecs, videoTexture.getHeight(), xSteps, 0);
+                    for (int i = 0; i <numOfSecs; i++){
+                        for (int y=0; y<camHeight; y++ ) { // loop through all the pixels on a line
+                            ofColor color = pixels.getColor( xSteps - i , y); // get the pixels on line ySteps
+                            videoInverted.setColor(xSteps -i , y, color);
+                        }
+                        // xSteps ++;
+                    }
+                    seconds = 0;
+                    minutes ++;
+                    
+                }
+                if (minutes >= numOfMins){
+                    // grab a hour chunk from the camera
+                    // pixels.drawSubsection(0, xSteps, xSteps + numOfSecs, videoTexture.getHeight(), xSteps, 0);
+                    for (int i = 0; i <numOfMins * numOfSecs; i++){
+                        for (int y=0; y<camHeight; y++ ) { // loop through all the pixels on a line
+                            ofColor color = pixels.getColor( xSteps - i, y); // get the pixels on line ySteps
+                            videoInverted.setColor(xSteps - i, y, color);
+                        }
+                        // xSteps ++;
+                    }
+                    seconds = 0;
+                    minutes = 0 ;
+                    hours ++;
+                    
+                }
+                if (hours >= numOfHours){
+                    //                    // grab a day chunk from the camera
+                    //                    // pixels.drawSubsection(0, xSteps, xSteps + numOfSecs, videoTexture.getHeight(), xSteps, 0);
+                    //                    for (int i = 0; i <numOfMins * numOfSecs; i++){
+                    //                        for (int y=0; y<camHeight; y++ ) { // loop through all the pixels on a line
+                    //                            ofColor color = pixels.getColor( xSteps - i, y); // get the pixels on line ySteps
+                    //                            videoInverted.setColor(xSteps - i, y, color);
+                    //                        }
+                    //                        // xSteps ++;
+                    //                    }
+                    hours = 0;
+                    seconds = 0;
+                    minutes = 0 ;
+                    
+                }
+                // count seconds
+                for (int y=0; y<camHeight; y++ ) { // loop through all the pixels on a line
+                    ofColor color = pixels.getColor( xSteps, y); // get the pixels on line ySteps
+                    videoInverted.setColor(xSteps, y, color);
+                }
+                
+                videoTexture.loadData(videoInverted);
+                // every second step a line
+                // every 60 seconds step a chunk
+                // every 60 minutes step a block
+                if ( xSteps >= camWidth ) {
+                    xSteps = 0; // if we are on the end line of the image then start at the top again
+                }
+                xSteps ++; // step on to the next line. increase this number to make things faster
+                currTime = ofGetSystemTimeMillis();
+                seconds ++;
+            }
             
+            break;
         default:
             break;
     }
-    
-    
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    
     if (b_radial){ // radial ribbon
         for (int i =0; i<videoTexture.getWidth(); i+=speed){
             ofPushMatrix();
@@ -131,7 +194,31 @@ void ofApp::draw(){
         vidGrabber.draw(ofGetWidth()-camWidth/4 -10, ofGetHeight()-camHeight/4 -10, camWidth/4, camHeight/4); // draw our plain image
     }
     
-    ofDrawBitmapString(" scanning " + scanName + " , press 1,2 or 3: for scantype, r: radial, c: camview" , 10, ofGetHeight() -10);
+    if (scanStyle == 5){
+        // draw clock time onscreen
+        string clockHours, clockMins, clockSecs, time;
+        if (hours < 10){
+            clockHours = "0" +ofToString(hours);
+        }  else {
+            clockHours = ofToString(hours);
+        }
+        
+        if (minutes < 10){
+            clockMins = "0" +ofToString(minutes);
+        }  else {
+            clockMins = ofToString(minutes);
+        }
+        
+        if (seconds < 10){
+            clockSecs = "0" +ofToString(seconds);
+        }  else {
+            clockSecs = ofToString(seconds);
+        }
+        time = clockHours + ":" + clockMins + ":" + clockSecs;
+        font.drawString( time  , ofGetWidth() -550, 110);
+    } else {
+        ofDrawBitmapString(" scanning " + scanName + " , press 1,2 or 3: for scantype, r: radial, c: camview" , 10, ofGetHeight() -10);
+    }
 }
 
 //--------------------------------------------------------------
@@ -158,6 +245,12 @@ void ofApp::keyPressed(int key){
         case '4':
             scanStyle = 4;
             scanName = "vertical ribbon";
+            break;
+            
+        case '5':
+            scanStyle = 5;
+            scanName = "let's be a slitscan clock";
+            currTime = ofGetSystemTimeMillis();
             break;
             
         case 'r':

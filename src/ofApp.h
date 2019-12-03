@@ -17,7 +17,10 @@ public:
     ofPixels videoInverted;
     ofTexture videoTexture;
     
-    int camWidth, camHeight, xSteps, ySteps, scanStyle, speed;
+    int camWidth, camHeight, xSteps, ySteps, scanStyle, speed, seconds, minutes, hours, numOfSecs, numOfMins, numOfHours;
     string scanName;
     bool b_radial, b_drawCam;
+    float currTime;
+    
+    ofTrueTypeFont font;
 };

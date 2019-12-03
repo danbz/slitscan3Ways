@@ -1,4 +1,4 @@
-# SlitScan camera - three wys
+# SlitScan camera - three ways
 
 https://github.com/danbz
 
