@@ -31,5 +31,6 @@ included is a compiled binary for OSX
 * c: hide preview
 * f: toggle fullscreen
 * r: draw anystyle scan as radial
+* d: draw slitscan image as 3d dots z-ordered by lightness
 
  ![screenshot](slitscan-3ways-screenshot.jpg)

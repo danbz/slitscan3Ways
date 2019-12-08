@@ -10,7 +10,7 @@ void ofApp::setup(){
     speed = 1;
     scanStyle = 1;
     scanName = "horizontal";
-    b_radial = false;
+    b_radial = b_drawDots = false;
     b_drawCam = true;
     seconds = minutes = hours = 0;
     numOfSecs = 10;
@@ -45,6 +45,7 @@ void ofApp::setup(){
     ofSetVerticalSync(true);
     
     ofSetBackgroundColor(0, 0, 0); // set the background colour to dark black
+    ofEnableDepthTest();
 }
 
 //--------------------------------------------------------------
@@ -187,9 +188,34 @@ void ofApp::draw(){
             videoTexture.drawSubsection(0, 0, speed +2, videoTexture.getHeight(), i, 0);
             ofPopMatrix();
         }
+    } else if (b_drawDots) {
+        cam.begin();
+        // added from moire test to draw a circles depth shifted
+        ofPixels pixelsRef;
+        videoTexture.readToPixels(pixelsRef);
+        float lightness;
+        ofColor colorC;
+        float maxCols = 1.0;
+        ofPushMatrix();
+        ofRotateXDeg( 180);
+        // ofRotateYDeg(180);
+        //ofTranslate(ofGetWidth(), ofGetHeight());
+        for (int i = 0; i < camWidth; i+= 10){
+            for (int j = 0; j < camHeight; j+= 10){
+                lightness = pixelsRef.getColor(i,j).getLightness();
+                colorC = pixelsRef.getColor(i, j);
+                //colorC = (ofMap(colorC.r, 0, 255, 0, maxCols)* 255/maxCols,ofMap(colorC.g, 0, 255, 0, maxCols)* 255/maxCols,ofMap(colorC.b, 0, 255, 0, maxCols)* 255/maxCols) ;
+                ofSetColor(colorC);
+                ofDrawCircle(i-camWidth/2, j-camHeight/2, ofMap(lightness, 0, 255, 100, -100),ofMap(lightness, 0, 255, 1, 5));
+            }
+        }
+        ofPopMatrix();
+        cam.end();
+        
     } else {
         videoTexture.draw( 0, 0, camWidth, camHeight); // draw the video texture we have constructed
     }
+    
     if (b_drawCam){
         vidGrabber.draw(ofGetWidth()-camWidth/4 -10, ofGetHeight()-camHeight/4 -10, camWidth/4, camHeight/4); // draw our plain image
     }
@@ -255,6 +281,7 @@ void ofApp::keyPressed(int key){
             
         case 'r':
             b_radial =!b_radial;
+            b_drawDots = false;
             break;
             
         case 'c':
@@ -271,9 +298,12 @@ void ofApp::keyPressed(int key){
             }
             break;
             
+        case 'd':
+            b_drawDots =!b_drawDots;
+            b_radial = false;
+            break;
+            
         default:
             break;
     }
-    
-    
 }
