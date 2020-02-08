@@ -10,12 +10,12 @@ void ofApp::setup(){
     speed = 1;
     scanStyle = 1;
     scanName = "horizontal";
-    b_radial = b_drawDots = false;
+    b_radial = b_drawDots = b_smooth = false;
     b_drawCam = true;
     seconds = minutes = hours = 0;
-    numOfSecs = 10;
-    numOfMins = 5;
-    numOfHours = 5;
+    numOfSecs = 60;
+    numOfMins = 15;
+    numOfHours = 4;
     
     font.load("AkzidGroBol", 100);
     // font.load("LiberationMono-Regular.ttf", 50);
@@ -46,6 +46,7 @@ void ofApp::setup(){
     
     ofSetBackgroundColor(0, 0, 0); // set the background colour to dark black
     ofEnableDepthTest();
+    ofDisableSmoothing();
 }
 
 //--------------------------------------------------------------
@@ -161,9 +162,7 @@ void ofApp::update(){
                 }
                 
                 videoTexture.loadData(videoInverted);
-                // every second step a line
-                // every 60 seconds step a chunk
-                // every 60 minutes step a block
+                // every second step a line, every 60 seconds step a chunk, every 60 minutes step a block
                 if ( xSteps >= camWidth ) {
                     xSteps = 0; // if we are on the end line of the image then start at the top again
                 }
@@ -171,8 +170,8 @@ void ofApp::update(){
                 currTime = ofGetSystemTimeMillis();
                 seconds ++;
             }
-            
             break;
+            
         default:
             break;
     }
@@ -180,6 +179,36 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+    
+    if (b_drawCam){
+        vidGrabber.draw(ofGetWidth()-camWidth/4 -10, ofGetHeight()-camHeight/4 -10, camWidth/4, camHeight/4); // draw our plain image
+        ofDrawBitmapString(" scanning " + scanName + " , press 1,2 or 3: for scantype, r: radial, c: camview, a: antialiased" , 10, ofGetHeight() -10);
+    }
+    
+    if (scanStyle == 5){
+        // draw clock time onscreen
+        string clockHours, clockMins, clockSecs, time;
+        if (hours < 10){
+            clockHours = "0" +ofToString(hours);
+        }  else {
+            clockHours = ofToString(hours);
+        }
+        
+        if (minutes < 10){
+            clockMins = "0" +ofToString(minutes);
+        }  else {
+            clockMins = ofToString(minutes);
+        }
+        
+        if (seconds < 10){
+            clockSecs = "0" +ofToString(seconds);
+        }  else {
+            clockSecs = ofToString(seconds);
+        }
+        time = clockHours + ":" + clockMins + ":" + clockSecs;
+        font.drawString( time  , ofGetWidth() -550, 110);
+    }
+    
     if (b_radial){ // radial ribbon
         for (int i =0; i<videoTexture.getWidth(); i+=speed){
             ofPushMatrix();
@@ -214,36 +243,6 @@ void ofApp::draw(){
         
     } else {
         videoTexture.draw( 0, 0, camWidth, camHeight); // draw the video texture we have constructed
-    }
-    
-    if (b_drawCam){
-        vidGrabber.draw(ofGetWidth()-camWidth/4 -10, ofGetHeight()-camHeight/4 -10, camWidth/4, camHeight/4); // draw our plain image
-    }
-    
-    if (scanStyle == 5){
-        // draw clock time onscreen
-        string clockHours, clockMins, clockSecs, time;
-        if (hours < 10){
-            clockHours = "0" +ofToString(hours);
-        }  else {
-            clockHours = ofToString(hours);
-        }
-        
-        if (minutes < 10){
-            clockMins = "0" +ofToString(minutes);
-        }  else {
-            clockMins = ofToString(minutes);
-        }
-        
-        if (seconds < 10){
-            clockSecs = "0" +ofToString(seconds);
-        }  else {
-            clockSecs = ofToString(seconds);
-        }
-        time = clockHours + ":" + clockMins + ":" + clockSecs;
-        font.drawString( time  , ofGetWidth() -550, 110);
-    } else {
-        ofDrawBitmapString(" scanning " + scanName + " , press 1,2 or 3: for scantype, r: radial, c: camview" , 10, ofGetHeight() -10);
     }
 }
 
@@ -301,6 +300,15 @@ void ofApp::keyPressed(int key){
         case 'd':
             b_drawDots =!b_drawDots;
             b_radial = false;
+            break;
+            
+        case 'a':
+            if (b_smooth){
+                ofEnableSmoothing();
+            } else {
+                ofDisableSmoothing();
+            }
+            b_smooth =!b_smooth;
             break;
             
         default:
